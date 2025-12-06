@@ -5,6 +5,7 @@
     <title>Магазин Обуви</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -18,6 +19,13 @@
                     <li class="nav-item"><a class="nav-link" href="profile.php">Личный кабинет</a></li>
                     <li class="nav-item"><a class="nav-link" href="cart.php">Корзина</a></li>
                     <li class="nav-item"><a class="nav-link" href="logout.php">Выход</a></li>
+                    <?php if ($_SESSION['role'] === 'admin'): ?>
+                    <li class="nav-item">
+                        <a class="nav-link text-danger fw-bold" href="admin/index.php">Админка</a>
+                    </li>
+                <?php endif; ?>
+                
+
                 <?php else: ?>
                     <li class="nav-item"><a class="nav-link" href="login.php">Вход</a></li>
                     <li class="nav-item"><a class="nav-link" href="register.php">Регистрация</a></li>
