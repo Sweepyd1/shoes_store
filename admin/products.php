@@ -18,12 +18,24 @@ if ($_POST) {
         $name = trim($_POST['name']);
         $brand = trim($_POST['brand']);
         $price = floatval($_POST['price']);
+        $old_price = !empty($_POST['old_price']) ? floatval($_POST['old_price']) : null;
+        $discount = intval($_POST['discount'] ?? 0);
         $description = trim($_POST['description']);
         $stock = intval($_POST['stock']);
+        $rating = floatval($_POST['rating'] ?? 0);
+        $reviews_count = intval($_POST['reviews_count'] ?? 0);
         $image_path = null;
 
         if (empty($name) || empty($brand) || $price <= 0) {
             $errors[] = 'Заполните обязательные поля правильно.';
+        }
+
+        if ($discount < 0 || $discount > 100) {
+            $errors[] = 'Скидка должна быть от 0 до 100%.';
+        }
+
+        if ($rating < 0 || $rating > 5) {
+            $errors[] = 'Рейтинг должен быть от 0 до 5.';
         }
 
         if (empty($errors) && !empty($_FILES['image']['name'])) {
@@ -45,8 +57,8 @@ if ($_POST) {
         }
 
         if (empty($errors)) {
-            $stmt = $pdo->prepare("INSERT INTO products (name, brand, price, description, image, stock) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$name, $brand, $price, $description, $image_path, $stock]);
+            $stmt = $pdo->prepare("INSERT INTO products (name, brand, price, old_price, discount, description, image, stock, rating, reviews_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$name, $brand, $price, $old_price, $discount, $description, $image_path, $stock, $rating, $reviews_count]);
             header("Location: products.php?success=" . urlencode('Товар добавлен!'));
             exit;
         }
@@ -56,12 +68,24 @@ if ($_POST) {
         $name = trim($_POST['name']);
         $brand = trim($_POST['brand']);
         $price = floatval($_POST['price']);
+        $old_price = !empty($_POST['old_price']) ? floatval($_POST['old_price']) : null;
+        $discount = intval($_POST['discount'] ?? 0);
         $description = trim($_POST['description']);
         $stock = intval($_POST['stock']);
+        $rating = floatval($_POST['rating'] ?? 0);
+        $reviews_count = intval($_POST['reviews_count'] ?? 0);
         $image_path = $_POST['current_image'];
 
         if (empty($name) || empty($brand) || $price <= 0) {
             $errors[] = 'Заполните обязательные поля правильно.';
+        }
+
+        if ($discount < 0 || $discount > 100) {
+            $errors[] = 'Скидка должна быть от 0 до 100%.';
+        }
+
+        if ($rating < 0 || $rating > 5) {
+            $errors[] = 'Рейтинг должен быть от 0 до 5.';
         }
 
         if (empty($errors) && !empty($_FILES['image']['name'])) {
@@ -87,8 +111,8 @@ if ($_POST) {
         }
 
         if (empty($errors)) {
-            $stmt = $pdo->prepare("UPDATE products SET name = ?, brand = ?, price = ?, description = ?, image = ?, stock = ? WHERE id = ?");
-            $stmt->execute([$name, $brand, $price, $description, $image_path, $stock, $id]);
+            $stmt = $pdo->prepare("UPDATE products SET name = ?, brand = ?, price = ?, old_price = ?, discount = ?, description = ?, image = ?, stock = ?, rating = ?, reviews_count = ? WHERE id = ?");
+            $stmt->execute([$name, $brand, $price, $old_price, $discount, $description, $image_path, $stock, $rating, $reviews_count, $id]);
             header("Location: products.php?success=" . urlencode('Товар обновлён!'));
             exit;
         }
@@ -120,6 +144,42 @@ $products = $stmt->fetchAll();
 
 <?php include '../header.php'; ?>
 
+<style>
+.badge-discount-admin {
+    background: #dc2626;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+}
+.badge-stock-low {
+    background: #f59e0b;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+.badge-stock-out {
+    background: #6b7280;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+.badge-stock-ok {
+    background: #10b981;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+.rating-stars-admin {
+    color: #fbbf24;
+    font-size: 14px;
+}
+</style>
+
 <div class="container mt-5">
     <h2>Управление товарами</h2>
 
@@ -138,49 +198,89 @@ $products = $stmt->fetchAll();
     <?php endif; ?>
 
     <button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#productModal" onclick="resetForm()">
-        Добавить товар
+        <i class="bi bi-plus-circle"></i> Добавить товар
     </button>
 
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Изображение</th>
-                <th>Название</th>
-                <th>Бренд</th>
-                <th>Цена</th>
-                <th>Наличие</th>
-                <th>Действия</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($products as $p): ?>
-            <tr>
-                <td><?= $p['id'] ?></td>
-                <td>
-                    <?php if ($p['image']): ?>
-                        <img src="../<?= htmlspecialchars($p['image']) ?>" alt="Товар" width="50">
-                    <?php else: ?>
-                        <span class="text-muted">Нет</span>
-                    <?php endif; ?>
-                </td>
-                <td><?= htmlspecialchars($p['name']) ?></td>
-                <td><?= htmlspecialchars($p['brand']) ?></td>
-                <td><?= number_format($p['price'], 2) ?> ₽</td>
-                <td><?= $p['stock'] ?></td>
-                <td>
-                    <a href="?edit=<?= $p['id'] ?>" class="btn btn-sm btn-warning edit-link">Изменить</a>
-                    <a href="?delete=<?= $p['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Удалить?')">Удалить</a>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Изображение</th>
+                    <th>Название</th>
+                    <th>Бренд</th>
+                    <th>Цена</th>
+                    <th>Скидка</th>
+                    <th>Наличие</th>
+                    <th>Рейтинг</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($products as $p): ?>
+                <tr>
+                    <td><?= $p['id'] ?></td>
+                    <td>
+                        <?php if ($p['image']): ?>
+                            <img src="../<?= htmlspecialchars($p['image']) ?>" alt="Товар" width="60" style="border-radius: 8px;">
+                        <?php else: ?>
+                            <span class="text-muted">Нет</span>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <strong><?= htmlspecialchars($p['name']) ?></strong>
+                    </td>
+                    <td><?= htmlspecialchars($p['brand']) ?></td>
+                    <td>
+                        <div>
+                            <strong><?= number_format($p['price'], 0, '', ' ') ?> ₽</strong>
+                            <?php if (!empty($p['old_price']) && $p['old_price'] > 0): ?>
+                                <br><small style="text-decoration: line-through; color: #6b7280;"><?= number_format($p['old_price'], 0, '', ' ') ?> ₽</small>
+                            <?php endif; ?>
+                        </div>
+                    </td>
+                    <td>
+                        <?php if (!empty($p['discount']) && $p['discount'] > 0): ?>
+                            <span class="badge-discount-admin">-<?= $p['discount'] ?>%</span>
+                        <?php else: ?>
+                            <span class="text-muted">—</span>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <?php if ($p['stock'] == 0): ?>
+                            <span class="badge-stock-out">Нет</span>
+                        <?php elseif ($p['stock'] <= 5): ?>
+                            <span class="badge-stock-low"><?= $p['stock'] ?> шт</span>
+                        <?php else: ?>
+                            <span class="badge-stock-ok"><?= $p['stock'] ?> шт</span>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <?php if (!empty($p['rating'])): ?>
+                            <span class="rating-stars-admin">★</span> <?= number_format($p['rating'], 1) ?>
+                            <br><small class="text-muted">(<?= $p['reviews_count'] ?? 0 ?> отз.)</small>
+                        <?php else: ?>
+                            <span class="text-muted">—</span>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <a href="?edit=<?= $p['id'] ?>" class="btn btn-sm btn-warning edit-link">
+                            <i class="bi bi-pencil"></i> Изменить
+                        </a>
+                        <a href="?delete=<?= $p['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Удалить товар?')">
+                            <i class="bi bi-trash"></i> Удалить
+                        </a>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <!-- Модальное окно -->
 <div class="modal fade" id="productModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalTitle">Добавить товар</h5>
@@ -190,36 +290,83 @@ $products = $stmt->fetchAll();
                 <input type="hidden" name="action" id="form_action" value="add">
                 <input type="hidden" name="id" id="form_id">
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label>Название</label>
-                        <input type="text" name="name" class="form-control" required>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Название <span class="text-danger">*</span></label>
+                                <input type="text" name="name" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Бренд <span class="text-danger">*</span></label>
+                                <input type="text" name="brand" class="form-control" required>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label>Бренд</label>
-                        <input type="text" name="brand" class="form-control" required>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Цена <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" name="price" class="form-control" min="0" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Старая цена</label>
+                                <input type="number" step="0.01" name="old_price" class="form-control" min="0">
+                                <small class="text-muted">Для показа зачёркнутой цены</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Скидка (%)</label>
+                                <input type="number" name="discount" class="form-control" value="0" min="0" max="100">
+                            </div>
+                        </div>
                     </div>
+
                     <div class="mb-3">
-                        <label>Цена</label>
-                        <input type="number" step="0.01" name="price" class="form-control" min="0" required>
+                        <label class="form-label">Описание</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
                     </div>
-                    <div class="mb-3">
-                        <label>Описание</label>
-                        <textarea name="description" class="form-control"></textarea>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Наличие (шт) <span class="text-danger">*</span></label>
+                                <input type="number" name="stock" class="form-control" value="0" min="0" required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label class="form-label">Рейтинг</label>
+                                <input type="number" step="0.1" name="rating" class="form-control" value="0" min="0" max="5">
+                                <small class="text-muted">От 0 до 5</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label class="form-label">Кол-во отзывов</label>
+                                <input type="number" name="reviews_count" class="form-control" value="0" min="0" readonly>
+                                <small class="text-muted">Автоматически</small>
+                            </div>
+                        </div>
                     </div>
+
                     <div class="mb-3">
-                        <label>Изображение</label>
+                        <label class="form-label">Изображение</label>
                         <input type="file" name="image" class="form-control" accept="image/*">
                         <input type="hidden" name="current_image" id="current_image">
-                        <div id="imagePreview" class="mt-2"></div>
-                    </div>
-                    <div class="mb-3">
-                        <label>Наличие (шт)</label>
-                        <input type="number" name="stock" class="form-control" value="0" min="0">
+                        <div id="imagePreview" class="mt-3"></div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-success" id="submitBtn">Добавить</button>
+                    <button type="submit" class="btn btn-success" id="submitBtn">
+                        <i class="bi bi-check-circle"></i> Добавить
+                    </button>
                 </div>
             </form>
         </div>
@@ -230,27 +377,35 @@ $products = $stmt->fetchAll();
 function resetForm() {
     document.getElementById('productForm').reset();
     document.getElementById('modalTitle').textContent = 'Добавить товар';
-    document.getElementById('submitBtn').textContent = 'Добавить';
+    document.getElementById('submitBtn').innerHTML = '<i class="bi bi-check-circle"></i> Добавить';
     document.getElementById('form_action').value = 'add';
     document.getElementById('imagePreview').innerHTML = '';
     document.getElementById('current_image').value = '';
+    document.querySelector('input[name="reviews_count"]').readOnly = false;
 }
 
 function fillEditForm(product) {
     document.getElementById('modalTitle').textContent = 'Редактировать товар';
-    document.getElementById('submitBtn').textContent = 'Сохранить';
+    document.getElementById('submitBtn').innerHTML = '<i class="bi bi-save"></i> Сохранить';
     document.getElementById('form_action').value = 'edit';
     document.getElementById('form_id').value = product.id;
     document.querySelector('input[name="name"]').value = product.name || '';
     document.querySelector('input[name="brand"]').value = product.brand || '';
     document.querySelector('input[name="price"]').value = product.price || '';
+    document.querySelector('input[name="old_price"]').value = product.old_price || '';
+    document.querySelector('input[name="discount"]').value = product.discount || '0';
     document.querySelector('textarea[name="description"]').value = product.description || '';
     document.querySelector('input[name="stock"]').value = product.stock || '0';
+    document.querySelector('input[name="rating"]').value = product.rating || '0';
+    document.querySelector('input[name="reviews_count"]').value = product.reviews_count || '0';
     document.getElementById('current_image').value = product.image || '';
+
+    // Делаем reviews_count только для чтения при редактировании (т.к. обновляется триггером)
+    document.querySelector('input[name="reviews_count"]').readOnly = true;
 
     if (product.image) {
         document.getElementById('imagePreview').innerHTML = 
-            `<img src="../${product.image}" alt="Предпросмотр" width="100">`;
+            `<img src="../${product.image}" alt="Предпросмотр" width="200" style="border-radius: 8px;">`;
     } else {
         document.getElementById('imagePreview').innerHTML = '';
     }
@@ -263,7 +418,7 @@ document.getElementById('productForm').querySelector('input[name="image"]')?.add
     if (this.files && this.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            preview.innerHTML = `<img src="${e.target.result}" width="100">`;
+            preview.innerHTML = `<img src="${e.target.result}" width="200" style="border-radius: 8px;">`;
         };
         reader.readAsDataURL(this.files[0]);
     }

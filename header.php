@@ -55,7 +55,7 @@
                         <li class="nav-item">
                             <a class="nav-link nav-link-modern cart-link <?php echo basename($_SERVER['PHP_SELF']) == 'cart.php' ? 'active' : ''; ?>" href="cart.php">
                                 <i class="bi bi-cart3"></i> Корзина
-                                <span class="cart-badge">0</span>
+                                
                             </a>
                         </li>
                         <li class="nav-item">
