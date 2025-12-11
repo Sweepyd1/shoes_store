@@ -1,0 +1,208 @@
+body {
+    background: linear-gradient(180deg, var(--light) 0%, #ffffff 100%);
+}
+
+/* Hero Section */
+.about-hero {
+    background: linear-gradient(135deg, var(--secondary) 0%, var(--purple) 100%);
+    padding: 100px 0 80px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.about-hero::before {
+    content: '';
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    top: -150px;
+    right: -150px;
+}
+
+.about-hero h1 {
+    font-size: 3.5rem;
+    font-weight: 800;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 2;
+}
+
+.about-hero p {
+    font-size: 1.3rem;
+    opacity: 0.95;
+    max-width: 700px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+}
+
+/* Story Section */
+.story-section {
+    padding: 100px 0;
+}
+
+.story-card {
+    background: white;
+    border-radius: 24px;
+    padding: 50px;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.08);
+    margin-bottom: 40px;
+}
+
+.story-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 30px;
+}
+
+.story-text {
+    font-size: 1.1rem;
+    line-height: 1.9;
+    color: #475569;
+    margin-bottom: 20px;
+}
+
+/* Stats Section */
+.stats-section {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05));
+    padding: 80px 0;
+    margin: 60px 0;
+}
+
+.stat-card {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.stat-number {
+    font-size: 4rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--secondary), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 15px;
+}
+
+.stat-label {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+/* Values Section */
+.values-section {
+    padding: 80px 0;
+}
+
+.section-title {
+    text-align: center;
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 60px;
+}
+
+.value-card {
+    background: white;
+    border-radius: 20px;
+    padding: 40px 30px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    transition: all 0.4s ease;
+    height: 100%;
+    border: 2px solid transparent;
+}
+
+.value-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 60px rgba(99, 102, 241, 0.15);
+    border-color: var(--secondary);
+}
+
+.value-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--secondary), var(--purple));
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 25px;
+    font-size: 2.5rem;
+    color: white;
+}
+
+.value-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 15px;
+}
+
+.value-text {
+    color: #64748b;
+    line-height: 1.7;
+    font-size: 1rem;
+}
+
+/* Team Section */
+.team-section {
+    padding: 80px 0;
+    background: white;
+}
+
+.team-card {
+    text-align: center;
+    padding: 30px;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.team-card:hover {
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.team-avatar {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--secondary), var(--purple));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 3rem;
+    color: white;
+    font-weight: 800;
+}
+
+.team-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 8px;
+}
+
+.team-position {
+    color: var(--secondary);
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+    .about-hero h1 {
+        font-size: 2.5rem;
+    }
+    
+    .story-card {
+        padding: 30px 20px;
+    }
+    
+    .stat-number {
+        font-size: 3rem;
+    }
+}
