@@ -3,7 +3,7 @@ include 'config.php';
 
 $id = (int)$_GET['id'];
 $stmt = $pdo->prepare("SELECT * FROM products WHERE id = ?");
-$stmt->execute([$id]);
+$stmt->execute(array($id));
 $product = $stmt->fetch();
 
 if (!$product) {
@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_review'])) {
         $error = "Комментарий не может быть пустым.";
     } else {
         $stmt = $pdo->prepare("INSERT INTO reviews (product_id, user_id, rating, comment) VALUES (?, ?, ?, ?)");
-        $stmt->execute([$id, $_SESSION['user_id'], $rating, $comment]);
+        $stmt->execute(array($id, $_SESSION['user_id'], $rating, $comment));
         
         // Триггер автоматически обновит rating и reviews_count в таблице products
         
@@ -42,12 +42,18 @@ $stmt = $pdo->prepare("
     WHERE r.product_id = ? 
     ORDER BY r.created_at DESC
 ");
-$stmt->execute([$id]);
+$stmt->execute(array($id));
 $reviews = $stmt->fetchAll();
 
 // Берем рейтинг и количество отзывов из таблицы products
-$avg_rating = $product['rating'] ?? 0;
-$reviews_count = $product['reviews_count'] ?? 0;
+$avg_rating = isset($product['rating']) ? $product['rating'] : 0;
+$reviews_count = isset($product['reviews_count']) ? $product['reviews_count'] : 0;
+
+// Функция склонения слов
+function declension($number, $titles) {
+    $cases = array(2, 0, 1, 1, 1, 2);
+    return $titles[($number % 100 > 4 && $number % 100 < 20) ? 2 : $cases[min($number % 10, 5)]];
+}
 ?>
 
 <?php include 'header.php'; ?>
@@ -102,15 +108,15 @@ $reviews_count = $product['reviews_count'] ?? 0;
                     <div class="product-image-wrapper">
                         <?php
                         $image_num = (($product['id'] - 1) % 6) + 1;
-                        $image_path = $product['image'] ?: 'uploads/products/'.$image_num.'.jpg';
+                        $image_path = !empty($product['image']) ? $product['image'] : 'uploads/products/'.$image_num.'.jpg';
                         ?>
                         <img src="<?php echo $image_path; ?>" 
                              class="product-image-main" 
                              alt="<?php echo htmlspecialchars($product['name']); ?>">
                         
-                        <?php if (isset($product['discount']) && $product['discount'] > 0): ?>
+                        <?php if (isset($product['discount']) && $product['discount'] > 0) { ?>
                         <div class="badge-discount-large">-<?php echo $product['discount']; ?>%</div>
-                        <?php endif; ?>
+                        <?php } ?>
                         
                         <div class="badge-stock <?php echo $product['stock'] > 0 ? 'badge-in-stock' : 'badge-out-stock'; ?>">
                             <?php echo $product['stock'] > 0 ? '✓ В наличии' : '✗ Нет в наличии'; ?>
@@ -124,41 +130,41 @@ $reviews_count = $product['reviews_count'] ?? 0;
                     <h1 class="product-title"><?php echo htmlspecialchars($product['name']); ?></h1>
 
                     <!-- Rating -->
-                    <?php if ($reviews_count > 0): ?>
+                    <?php if ($reviews_count > 0) { ?>
                     <div class="rating-display">
                         <div class="rating-stars-large">
                             <?php 
                             $full_stars = floor($avg_rating);
-                            for($i = 1; $i <= 5; $i++): 
+                            for($i = 1; $i <= 5; $i++) { 
                             ?>
                                 <i class="bi bi-star-fill <?php echo $i <= $full_stars ? 'star-large' : 'star-empty-large'; ?>"></i>
-                            <?php endfor; ?>
+                            <?php } ?>
                         </div>
                         <span class="rating-text"><?php echo $avg_rating; ?></span>
-                        <span class="rating-count">(<?php echo $reviews_count; ?> <?php echo declension($reviews_count, ['отзыв', 'отзыва', 'отзывов']); ?>)</span>
+                        <span class="rating-count">(<?php echo $reviews_count; ?> <?php echo declension($reviews_count, array('отзыв', 'отзыва', 'отзывов')); ?>)</span>
                     </div>
-                    <?php endif; ?>
+                    <?php } ?>
 
                     <!-- Price -->
                     <div class="price-container">
                         <div class="product-price"><?php echo number_format($product['price'], 0, '.', ' '); ?> ₽</div>
-                        <?php if (isset($product['old_price']) && $product['old_price'] > 0): ?>
+                        <?php if (isset($product['old_price']) && $product['old_price'] > 0) { ?>
                         <div class="product-price-old"><?php echo number_format($product['old_price'], 0, '.', ' '); ?> ₽</div>
-                        <?php endif; ?>
+                        <?php } ?>
                     </div>
 
                     <!-- Stock Info -->
-                    <?php if ($product['stock'] > 0 && $product['stock'] <= 5): ?>
+                    <?php if ($product['stock'] > 0 && $product['stock'] <= 5) { ?>
                     <div class="stock-warning">
                         <i class="bi bi-exclamation-triangle-fill"></i>
-                        <span>Осталось всего <?php echo $product['stock']; ?> <?php echo declension($product['stock'], ['штука', 'штуки', 'штук']); ?>! Успейте заказать!</span>
+                        <span>Осталось всего <?php echo $product['stock']; ?> <?php echo declension($product['stock'], array('штука', 'штуки', 'штук')); ?>! Успейте заказать!</span>
                     </div>
-                    <?php elseif ($product['stock'] > 5): ?>
+                    <?php } elseif ($product['stock'] > 5) { ?>
                     <div class="stock-info">
                         <i class="bi bi-check-circle-fill"></i>
-                        <span>В наличии: <?php echo $product['stock']; ?> <?php echo declension($product['stock'], ['штука', 'штуки', 'штук']); ?></span>
+                        <span>В наличии: <?php echo $product['stock']; ?> <?php echo declension($product['stock'], array('штука', 'штуки', 'штук')); ?></span>
                     </div>
-                    <?php endif; ?>
+                    <?php } ?>
 
                     <!-- Description -->
                     <div class="product-description">
@@ -166,14 +172,16 @@ $reviews_count = $product['reviews_count'] ?? 0;
                     </div>
 
                     <!-- Add to Cart Form -->
-                    <?php if ($product['stock'] > 0): ?>
+                    <?php if ($product['stock'] > 0) { ?>
                     <form method="POST" action="add_to_cart.php" id="addToCartForm">
                         <div class="form-group-modern">
                             <label class="form-label-modern">Выберите размер</label>
                             <select name="size" class="form-select-modern" required>
-                                <?php foreach (range(36, 44) as $size): ?>
+                                <?php 
+                                for ($size = 36; $size <= 44; $size++) { 
+                                ?>
                                     <option value="<?php echo $size; ?>">EU <?php echo $size; ?></option>
-                                <?php endforeach; ?>
+                                <?php } ?>
                             </select>
                         </div>
                         
@@ -186,7 +194,7 @@ $reviews_count = $product['reviews_count'] ?? 0;
                                    value="1" min="1" max="<?php echo $product['stock']; ?>" required>
                             <small id="quantityError" style="color: #dc2626; display: none; margin-top: 8px;">
                                 <i class="bi bi-exclamation-circle"></i> 
-                                Вы не можете заказать больше <?php echo $product['stock']; ?> <?php echo declension($product['stock'], ['штуки', 'штук', 'штук']); ?>
+                                Вы не можете заказать больше <?php echo $product['stock']; ?> <?php echo declension($product['stock'], array('штуки', 'штук', 'штук')); ?>
                             </small>
                         </div>
                         
@@ -234,12 +242,12 @@ $reviews_count = $product['reviews_count'] ?? 0;
                             }
                         });
                     </script>
-                    <?php else: ?>
+                    <?php } else { ?>
                     <button class="btn-add-cart btn-disabled" disabled>
                         <i class="bi bi-x-circle"></i>
                         Нет в наличии
                     </button>
-                    <?php endif; ?>
+                    <?php } ?>
                 </div>
             </div>
         </div>
@@ -248,19 +256,19 @@ $reviews_count = $product['reviews_count'] ?? 0;
         <div class="reviews-section">
             <div class="section-header">
                 <h2 class="section-title">Отзывы покупателей</h2>
-                <span class="reviews-count-badge"><?php echo $reviews_count; ?> <?php echo declension($reviews_count, ['отзыв', 'отзыва', 'отзывов']); ?></span>
+                <span class="reviews-count-badge"><?php echo $reviews_count; ?> <?php echo declension($reviews_count, array('отзыв', 'отзыва', 'отзывов')); ?></span>
             </div>
 
-            <?php if (!empty($reviews)): ?>
+            <?php if (!empty($reviews)) { ?>
                 <div class="reviews-list">
-                    <?php foreach ($reviews as $review): ?>
+                    <?php foreach ($reviews as $review) { ?>
                         <div class="review-card-modern">
                             <div class="review-header">
                                 <div class="reviewer-name"><?php echo htmlspecialchars($review['user_name']); ?></div>
                                 <div class="review-stars">
-                                    <?php for($i = 1; $i <= 5; $i++): ?>
+                                    <?php for($i = 1; $i <= 5; $i++) { ?>
                                         <i class="bi bi-star-fill <?php echo $i <= $review['rating'] ? 'review-star' : 'review-star-empty'; ?>"></i>
-                                    <?php endfor; ?>
+                                    <?php } ?>
                                 </div>
                             </div>
                             <p class="review-text"><?php echo nl2br(htmlspecialchars($review['comment'])); ?></p>
@@ -268,32 +276,32 @@ $reviews_count = $product['reviews_count'] ?? 0;
                                 <?php echo date('d.m.Y в H:i', strtotime($review['created_at'])); ?>
                             </div>
                         </div>
-                    <?php endforeach; ?>
+                    <?php } ?>
                 </div>
-            <?php else: ?>
+            <?php } else { ?>
                 <div class="empty-reviews">
                     <div class="empty-icon">💬</div>
                     <h4 class="empty-title">Пока нет отзывов</h4>
                     <p class="empty-text">Станьте первым, кто оставит отзыв об этом товаре!</p>
                 </div>
-            <?php endif; ?>
+            <?php } ?>
 
             <!-- Review Form -->
-            <?php if (isset($_SESSION['user_id'])): ?>
+            <?php if (isset($_SESSION['user_id'])) { ?>
             <div class="review-form-container">
                 <h3 class="form-title">Оставить отзыв</h3>
                 
-                <?php if (!empty($error)): ?>
+                <?php if (!empty($error)) { ?>
                     <div class="alert-error"><?php echo htmlspecialchars($error); ?></div>
-                <?php endif; ?>
+                <?php } ?>
 
                 <form method="POST" id="reviewForm">
                     <div class="form-group-modern">
                         <label class="form-label-modern">Ваша оценка</label>
                         <div class="rating-widget">
-                            <?php for ($i = 1; $i <= 5; $i++): ?>
+                            <?php for ($i = 1; $i <= 5; $i++) { ?>
                                 <button type="button" class="star-btn" data-value="<?php echo $i; ?>">★</button>
-                            <?php endfor; ?>
+                            <?php } ?>
                         </div>
                         <input type="hidden" name="rating" id="ratingInput" required>
                         <div class="rating-label" id="ratingLabel">Нажмите на звёзды для оценки</div>
@@ -318,28 +326,28 @@ $reviews_count = $product['reviews_count'] ?? 0;
                     const ratingLabel = document.getElementById('ratingLabel');
                     let selectedRating = 0;
 
-                    stars.forEach(star => {
+                    stars.forEach(function(star) {
                         const value = parseInt(star.dataset.value);
 
-                        star.addEventListener('click', () => {
+                        star.addEventListener('click', function() {
                             selectedRating = value;
                             updateStars();
                             ratingInput.value = selectedRating;
-                            ratingLabel.textContent = `Ваша оценка: ${selectedRating} из 5`;
+                            ratingLabel.textContent = 'Ваша оценка: ' + selectedRating + ' из 5';
                             ratingLabel.classList.remove('error');
                         });
 
-                        star.addEventListener('mouseenter', () => {
+                        star.addEventListener('mouseenter', function() {
                             highlightStars(value);
                         });
 
-                        star.addEventListener('mouseleave', () => {
+                        star.addEventListener('mouseleave', function() {
                             highlightStars(selectedRating);
                         });
                     });
 
                     function highlightStars(count) {
-                        stars.forEach((s, i) => {
+                        stars.forEach(function(s, i) {
                             if (i < count) {
                                 s.style.color = '#fbbf24';
                             } else {
@@ -361,25 +369,17 @@ $reviews_count = $product['reviews_count'] ?? 0;
                     });
                 });
             </script>
-            <?php else: ?>
+            <?php } else { ?>
             <div class="login-alert">
                 <p class="login-alert-text">Хотите оставить отзыв?</p>
                 <a href="login.php" class="btn-login">
                     <i class="bi bi-box-arrow-in-right"></i> Войти в аккаунт
                 </a>
             </div>
-            <?php endif; ?>
+            <?php } ?>
         </div>
     </div>
 </body>
 </html>
 
-<?php 
-// Функция склонения слов
-function declension($number, $titles) {
-    $cases = [2, 0, 1, 1, 1, 2];
-    return $titles[($number % 100 > 4 && $number % 100 < 20) ? 2 : $cases[min($number % 10, 5)]];
-}
-
-include 'footer.php'; 
-?>
+<?php include 'footer.php'; ?>

@@ -6,7 +6,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     exit;
 }
 
-$errors = [];
+$errors = array();
 $success = '';
 
 // ======================
@@ -19,11 +19,11 @@ if ($_POST) {
         $brand = trim($_POST['brand']);
         $price = floatval($_POST['price']);
         $old_price = !empty($_POST['old_price']) ? floatval($_POST['old_price']) : null;
-        $discount = intval($_POST['discount'] ?? 0);
+        $discount = isset($_POST['discount']) ? intval($_POST['discount']) : 0;
         $description = trim($_POST['description']);
         $stock = intval($_POST['stock']);
-        $rating = floatval($_POST['rating'] ?? 0);
-        $reviews_count = intval($_POST['reviews_count'] ?? 0);
+        $rating = isset($_POST['rating']) ? floatval($_POST['rating']) : 0;
+        $reviews_count = isset($_POST['reviews_count']) ? intval($_POST['reviews_count']) : 0;
         $image_path = null;
 
         if (empty($name) || empty($brand) || $price <= 0) {
@@ -39,7 +39,7 @@ if ($_POST) {
         }
 
         if (empty($errors) && !empty($_FILES['image']['name'])) {
-            $allowed_types = ['jpg', 'jpeg', 'png', 'gif'];
+            $allowed_types = array('jpg', 'jpeg', 'png', 'gif');
             $file_ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
             if (!in_array($file_ext, $allowed_types)) {
                 $errors[] = 'Разрешены только JPG, PNG, GIF.';
@@ -58,7 +58,7 @@ if ($_POST) {
 
         if (empty($errors)) {
             $stmt = $pdo->prepare("INSERT INTO products (name, brand, price, old_price, discount, description, image, stock, rating, reviews_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$name, $brand, $price, $old_price, $discount, $description, $image_path, $stock, $rating, $reviews_count]);
+            $stmt->execute(array($name, $brand, $price, $old_price, $discount, $description, $image_path, $stock, $rating, $reviews_count));
             header("Location: products.php?success=" . urlencode('Товар добавлен!'));
             exit;
         }
@@ -69,11 +69,11 @@ if ($_POST) {
         $brand = trim($_POST['brand']);
         $price = floatval($_POST['price']);
         $old_price = !empty($_POST['old_price']) ? floatval($_POST['old_price']) : null;
-        $discount = intval($_POST['discount'] ?? 0);
+        $discount = isset($_POST['discount']) ? intval($_POST['discount']) : 0;
         $description = trim($_POST['description']);
         $stock = intval($_POST['stock']);
-        $rating = floatval($_POST['rating'] ?? 0);
-        $reviews_count = intval($_POST['reviews_count'] ?? 0);
+        $rating = isset($_POST['rating']) ? floatval($_POST['rating']) : 0;
+        $reviews_count = isset($_POST['reviews_count']) ? intval($_POST['reviews_count']) : 0;
         $image_path = $_POST['current_image'];
 
         if (empty($name) || empty($brand) || $price <= 0) {
@@ -89,7 +89,7 @@ if ($_POST) {
         }
 
         if (empty($errors) && !empty($_FILES['image']['name'])) {
-            $allowed_types = ['jpg', 'jpeg', 'png', 'gif'];
+            $allowed_types = array('jpg', 'jpeg', 'png', 'gif');
             $file_ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
             if (!in_array($file_ext, $allowed_types)) {
                 $errors[] = 'Разрешены только JPG, PNG, GIF.';
@@ -112,7 +112,7 @@ if ($_POST) {
 
         if (empty($errors)) {
             $stmt = $pdo->prepare("UPDATE products SET name = ?, brand = ?, price = ?, old_price = ?, discount = ?, description = ?, image = ?, stock = ?, rating = ?, reviews_count = ? WHERE id = ?");
-            $stmt->execute([$name, $brand, $price, $old_price, $discount, $description, $image_path, $stock, $rating, $reviews_count, $id]);
+            $stmt->execute(array($name, $brand, $price, $old_price, $discount, $description, $image_path, $stock, $rating, $reviews_count, $id));
             header("Location: products.php?success=" . urlencode('Товар обновлён!'));
             exit;
         }
@@ -125,12 +125,12 @@ if ($_POST) {
 if (isset($_GET['delete'])) {
     $id = intval($_GET['delete']);
     $stmt = $pdo->prepare("SELECT image FROM products WHERE id = ?");
-    $stmt->execute([$id]);
+    $stmt->execute(array($id));
     $img = $stmt->fetchColumn();
     if ($img && file_exists('../' . $img)) {
         unlink('../' . $img);
     }
-    $pdo->prepare("DELETE FROM products WHERE id = ?")->execute([$id]);
+    $pdo->prepare("DELETE FROM products WHERE id = ?")->execute(array($id));
     header('Location: products.php?deleted=1');
     exit;
 }
@@ -183,19 +183,19 @@ $products = $stmt->fetchAll();
 <div class="container mt-5">
     <h2>Управление товарами</h2>
 
-    <?php if (isset($_GET['success'])): ?>
-        <div class="alert alert-success"><?= htmlspecialchars($_GET['success']) ?></div>
-    <?php endif; ?>
-    <?php if (isset($_GET['deleted'])): ?>
+    <?php if (isset($_GET['success'])) { ?>
+        <div class="alert alert-success"><?php echo htmlspecialchars($_GET['success']); ?></div>
+    <?php } ?>
+    <?php if (isset($_GET['deleted'])) { ?>
         <div class="alert alert-success">Товар удалён!</div>
-    <?php endif; ?>
-    <?php if (!empty($errors)): ?>
+    <?php } ?>
+    <?php if (!empty($errors)) { ?>
         <div class="alert alert-danger">
-            <?php foreach ($errors as $e): ?>
-                <div><?= htmlspecialchars($e) ?></div>
-            <?php endforeach; ?>
+            <?php foreach ($errors as $e) { ?>
+                <div><?php echo htmlspecialchars($e); ?></div>
+            <?php } ?>
         </div>
-    <?php endif; ?>
+    <?php } ?>
 
     <button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#productModal" onclick="resetForm()">
         <i class="bi bi-plus-circle"></i> Добавить товар
@@ -217,62 +217,62 @@ $products = $stmt->fetchAll();
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($products as $p): ?>
+                <?php foreach ($products as $p) { ?>
                 <tr>
-                    <td><?= $p['id'] ?></td>
+                    <td><?php echo $p['id']; ?></td>
                     <td>
-                        <?php if ($p['image']): ?>
-                            <img src="../<?= htmlspecialchars($p['image']) ?>" alt="Товар" width="60" style="border-radius: 8px;">
-                        <?php else: ?>
+                        <?php if ($p['image']) { ?>
+                            <img src="../<?php echo htmlspecialchars($p['image']); ?>" alt="Товар" width="60" style="border-radius: 8px;">
+                        <?php } else { ?>
                             <span class="text-muted">Нет</span>
-                        <?php endif; ?>
+                        <?php } ?>
                     </td>
                     <td>
-                        <strong><?= htmlspecialchars($p['name']) ?></strong>
+                        <strong><?php echo htmlspecialchars($p['name']); ?></strong>
                     </td>
-                    <td><?= htmlspecialchars($p['brand']) ?></td>
+                    <td><?php echo htmlspecialchars($p['brand']); ?></td>
                     <td>
                         <div>
-                            <strong><?= number_format($p['price'], 0, '', ' ') ?> ₽</strong>
-                            <?php if (!empty($p['old_price']) && $p['old_price'] > 0): ?>
-                                <br><small style="text-decoration: line-through; color: #6b7280;"><?= number_format($p['old_price'], 0, '', ' ') ?> ₽</small>
-                            <?php endif; ?>
+                            <strong><?php echo number_format($p['price'], 0, '', ' '); ?> ₽</strong>
+                            <?php if (!empty($p['old_price']) && $p['old_price'] > 0) { ?>
+                                <br><small style="text-decoration: line-through; color: #6b7280;"><?php echo number_format($p['old_price'], 0, '', ' '); ?> ₽</small>
+                            <?php } ?>
                         </div>
                     </td>
                     <td>
-                        <?php if (!empty($p['discount']) && $p['discount'] > 0): ?>
-                            <span class="badge-discount-admin">-<?= $p['discount'] ?>%</span>
-                        <?php else: ?>
+                        <?php if (!empty($p['discount']) && $p['discount'] > 0) { ?>
+                            <span class="badge-discount-admin">-<?php echo $p['discount']; ?>%</span>
+                        <?php } else { ?>
                             <span class="text-muted">—</span>
-                        <?php endif; ?>
+                        <?php } ?>
                     </td>
                     <td>
-                        <?php if ($p['stock'] == 0): ?>
+                        <?php if ($p['stock'] == 0) { ?>
                             <span class="badge-stock-out">Нет</span>
-                        <?php elseif ($p['stock'] <= 5): ?>
-                            <span class="badge-stock-low"><?= $p['stock'] ?> шт</span>
-                        <?php else: ?>
-                            <span class="badge-stock-ok"><?= $p['stock'] ?> шт</span>
-                        <?php endif; ?>
+                        <?php } elseif ($p['stock'] <= 5) { ?>
+                            <span class="badge-stock-low"><?php echo $p['stock']; ?> шт</span>
+                        <?php } else { ?>
+                            <span class="badge-stock-ok"><?php echo $p['stock']; ?> шт</span>
+                        <?php } ?>
                     </td>
                     <td>
-                        <?php if (!empty($p['rating'])): ?>
-                            <span class="rating-stars-admin">★</span> <?= number_format($p['rating'], 1) ?>
-                            <br><small class="text-muted">(<?= $p['reviews_count'] ?? 0 ?> отз.)</small>
-                        <?php else: ?>
+                        <?php if (!empty($p['rating'])) { ?>
+                            <span class="rating-stars-admin">★</span> <?php echo number_format($p['rating'], 1); ?>
+                            <br><small class="text-muted">(<?php echo isset($p['reviews_count']) ? $p['reviews_count'] : 0; ?> отз.)</small>
+                        <?php } else { ?>
                             <span class="text-muted">—</span>
-                        <?php endif; ?>
+                        <?php } ?>
                     </td>
                     <td>
-                        <a href="?edit=<?= $p['id'] ?>" class="btn btn-sm btn-warning edit-link">
+                        <a href="?edit=<?php echo $p['id']; ?>" class="btn btn-sm btn-warning edit-link">
                             <i class="bi bi-pencil"></i> Изменить
                         </a>
-                        <a href="?delete=<?= $p['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Удалить товар?')">
+                        <a href="?delete=<?php echo $p['id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Удалить товар?')">
                             <i class="bi bi-trash"></i> Удалить
                         </a>
                     </td>
                 </tr>
-                <?php endforeach; ?>
+                <?php } ?>
             </tbody>
         </table>
     </div>
@@ -405,42 +405,45 @@ function fillEditForm(product) {
 
     if (product.image) {
         document.getElementById('imagePreview').innerHTML = 
-            `<img src="../${product.image}" alt="Предпросмотр" width="200" style="border-radius: 8px;">`;
+            '<img src="../' + product.image + '" alt="Предпросмотр" width="200" style="border-radius: 8px;">';
     } else {
         document.getElementById('imagePreview').innerHTML = '';
     }
 }
 
 // Обработка выбора нового изображения
-document.getElementById('productForm').querySelector('input[name="image"]')?.addEventListener('change', function(e) {
-    const preview = document.getElementById('imagePreview');
-    preview.innerHTML = '';
-    if (this.files && this.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            preview.innerHTML = `<img src="${e.target.result}" width="200" style="border-radius: 8px;">`;
-        };
-        reader.readAsDataURL(this.files[0]);
-    }
-});
+var imageInput = document.getElementById('productForm').querySelector('input[name="image"]');
+if (imageInput) {
+    imageInput.addEventListener('change', function(e) {
+        var preview = document.getElementById('imagePreview');
+        preview.innerHTML = '';
+        if (this.files && this.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                preview.innerHTML = '<img src="' + e.target.result + '" width="200" style="border-radius: 8px;">';
+            };
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+}
 
 // Клик по "Изменить" → AJAX-загрузка + модалка
-document.querySelectorAll('.edit-link').forEach(link => {
+document.querySelectorAll('.edit-link').forEach(function(link) {
     link.addEventListener('click', function(e) {
         e.preventDefault();
-        const id = new URLSearchParams(this.search).get('edit');
-        fetch(`../api/get_product.php?id=${id}`)
-            .then(res => res.json())
-            .then(product => {
+        var id = new URLSearchParams(this.search).get('edit');
+        fetch('../api/get_product.php?id=' + id)
+            .then(function(res) { return res.json(); })
+            .then(function(product) {
                 if (product.error) {
                     alert('Ошибка: ' + product.error);
                     return;
                 }
                 fillEditForm(product);
-                const modal = new bootstrap.Modal(document.getElementById('productModal'));
+                var modal = new bootstrap.Modal(document.getElementById('productModal'));
                 modal.show();
             })
-            .catch(err => {
+            .catch(function(err) {
                 console.error(err);
                 alert('Не удалось загрузить данные товара.');
             });

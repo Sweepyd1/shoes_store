@@ -1,6 +1,6 @@
 <?php
 session_start();
-
+define('BASE_URL', '/');
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root'); // Заменить на свои данные
 define('DB_PASS', '12345');     // Заменить на свои данные
