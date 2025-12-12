@@ -1,21 +1,38 @@
 <?php include 'config.php'; ?>
 <?php if (!isset($_SESSION['user_id'])) { header("Location: login.php"); exit; } ?>
-<?php include 'header.php'; ?>
 
 <?php
+$user_id = $_SESSION['user_id'];
+
+// ========================================
+// ОБРАБОТКА СОХРАНЕНИЯ ПРОФИЛЯ
+// ========================================
+$success_message = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
+    $name = trim($_POST['name']);
+    $phone = trim($_POST['phone']);
+    $address = trim($_POST['address']);
+    
+    if (!empty($name)) {
+        $stmt = $pdo->prepare("UPDATE users SET name = ?, phone = ?, address = ? WHERE id = ?");
+        $stmt->execute(array($name, $phone, $address, $user_id));
+        $success_message = 'Данные успешно обновлены!';
+    }
+}
+
 // Определяем активную вкладку
 $active_tab = 'profile';
 if (isset($_GET['filter']) || (isset($_GET['tab']) && $_GET['tab'] === 'orders')) {
     $active_tab = 'orders';
 }
 
-$user_id = $_SESSION['user_id'];
-
-// Загружаем данные пользователя один раз
+// Загружаем данные пользователя
 $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
 $stmt->execute(array($user_id));
 $user = $stmt->fetch();
 ?>
+
+<?php include 'header.php'; ?>
 
 <div class="container mt-5">
     <ul class="nav nav-tabs">
@@ -32,32 +49,48 @@ $user = $stmt->fetch();
         <div class="tab-pane <?php echo $active_tab === 'profile' ? 'active show' : 'fade'; ?>" id="profile">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h3><i class="bi bi-person-circle me-2"></i>Мой профиль</h3>
-                <button type="submit" form="profile-form" class="btn btn-primary">Сохранить изменения</button>
+                <button type="submit" form="profile-form" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i> Сохранить изменения
+                </button>
             </div>
+
+            <?php if (!empty($success_message)) { ?>
+                <div class="alert alert-success alert-dismissible fade show">
+                    ✅ <?php echo htmlspecialchars($success_message); ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php } ?>
 
             <div class="row">
                 <div class="col-md-8">
                     <form id="profile-form" method="POST">
+                        <input type="hidden" name="update_profile" value="1">
+                        
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Имя</label>
-                                <input type="text" name="name" class="form-control" value="<?php echo htmlspecialchars(isset($user['name']) ? $user['name'] : ''); ?>" required>
+                                <input type="text" name="name" class="form-control" 
+                                       value="<?php echo htmlspecialchars(isset($user['name']) ? $user['name'] : ''); ?>" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Email</label>
-                                <input type="email" class="form-control" value="<?php echo htmlspecialchars(isset($user['email']) ? $user['email'] : ''); ?>" disabled>
+                                <input type="email" class="form-control" 
+                                       value="<?php echo htmlspecialchars(isset($user['email']) ? $user['email'] : ''); ?>" disabled>
                                 <small class="form-text text-muted">Email нельзя изменить</small>
                             </div>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Телефон</label>
-                            <input type="text" name="phone" class="form-control" value="<?php echo htmlspecialchars(isset($user['phone']) ? $user['phone'] : ''); ?>">
+                            <input type="text" name="phone" class="form-control" 
+                                   value="<?php echo htmlspecialchars(isset($user['phone']) ? $user['phone'] : ''); ?>"
+                                   placeholder="+7 (___) ___-__-__">
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Адрес доставки</label>
-                            <textarea name="address" class="form-control" rows="3"><?php echo htmlspecialchars(isset($user['address']) ? $user['address'] : ''); ?></textarea>
+                            <textarea name="address" class="form-control" rows="3" 
+                                      placeholder="Город, улица, дом, квартира"><?php echo htmlspecialchars(isset($user['address']) ? $user['address'] : ''); ?></textarea>
                         </div>
                     </form>
                 </div>
@@ -85,10 +118,6 @@ $user = $stmt->fetch();
                     </div>
                 </div>
             </div>
-
-            <?php if ($_POST) { ?>
-                <div class="alert alert-success mt-3">✅ Данные успешно обновлены!</div>
-            <?php } ?>
         </div>
 
         <!-- Заказы -->
