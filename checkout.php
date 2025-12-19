@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $total = 0;
         foreach ($cart_items as $item) {
             $total += $item['price'] * $item['quantity'];
-            // Доп. проверка остатка (опционально, но безопасно)
+            // Доп. проверка остатка
             $stock = $pdo->prepare("SELECT stock FROM products WHERE id = ?");
             $stock->execute([$item['product_id']]);
             if ($item['quantity'] > $stock->fetchColumn()) {
@@ -55,6 +55,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 VALUES (?, ?, ?, ?, ?)
             ");
             $stmt->execute([$order_id, $item['product_id'], $item['size'], $item['quantity'], $item['price']]);
+        }
+
+        // 🔥 УМЕНЬШАЕМ STOCK ДЛЯ КАЖДОГО ТОВАРА
+        foreach ($cart_items as $item) {
+            $stmt = $pdo->prepare("
+                UPDATE products 
+                SET stock = GREATEST(0, stock - ?) 
+                WHERE id = ?
+            ");
+            $stmt->execute([$item['quantity'], $item['product_id']]);
         }
 
         // 🔥 ОЧИЩАЕМ КОРЗИНУ ИЗ БД (главное!)
